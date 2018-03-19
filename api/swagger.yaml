@@ -1,0 +1,1225 @@
+---
+swagger: '2.0'
+info:
+  description: 'SRS and workflow: https://docs.google.com/document/d/17aiIiosJApvnAliPajrcKnusvc9YdgLgiccv_TbMRGM
+
+'
+  version: 1.0.0
+  title: Monero Wallet service API
+basePath: "/"
+schemes:
+- http
+- https
+paths:
+  "/api/v1/open_session":
+    post:
+      summary: OpenSession
+      tags:
+      - Session
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - public_key
+          properties:
+            public_key:
+              type: string
+          description: request to open new session
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - session_id
+            type: object
+            properties:
+              session_id:
+                type: string
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+                example: corrupted key
+  "/api/v1/change_public_key":
+    post:
+      summary: ChangePublicKey
+      tags:
+      - Key exchange
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+        x-example: 11967d5e9addc5416ea9224eee0e91fc
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        description: monotonic increasing nonce
+        x-example: 154294820
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+        description: signature of session id + nonce + message
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - public_key
+          properties:
+            public_key:
+              type: string
+      responses:
+        '204':
+          description: Successfully finished
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+                example: corrupted key
+        '403':
+          description: Status 403
+  "/api/v1/extra_multisig_info":
+    post:
+      summary: extra multisig info
+      description: Second round of keys exchange
+      tags:
+      - Key exchange
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - extra_multisig_info
+          properties:
+            extra_multisig_info:
+              type: string
+              description: includes public spend key + array of multisig keys + signature
+      responses:
+        '204':
+          description: Multisig accepted
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+  "/api/v1/outputs":
+    get:
+      summary: Participants' outputs
+      tags:
+      - Key exchange
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: If-Modified-Since
+        in: header
+        required: false
+        type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - outputs
+            type: object
+            properties:
+              outputs:
+                type: array
+                items:
+                  type: string
+    post:
+      summary: outputs synchronization
+      tags:
+      - Key exchange
+      description: Second round of keys exchange
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - outputs
+          properties:
+            outputs:
+              type: string
+              description: ciphered and signed array of outputs
+      responses:
+        '204':
+          description: Outputs accepted
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+  "/api/v1/create_wallet":
+    post:
+      summary: create wallet
+      tags:
+      - Wallet
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - multisig_info
+          - name
+          - participants
+          - signers
+          properties:
+            participants:
+              type: integer
+              minimum: 2
+            signers:
+              type: integer
+              minimum: 1
+            name:
+              type: string
+            multisig_info:
+              type: string
+              description: view secret key + public spend key + signature
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            type: object
+            properties:
+              invite_code:
+                type: string
+                description: invite code to pass to other participants
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+  "/api/v1/wallet_invite":
+    get:
+      summary: get wallet invite code
+      tags:
+      - Wallet
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            type: object
+            properties:
+              invite_code:
+                type: string
+                description: invite code to pass to other participants
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+  "/api/v1/join_wallet":
+    post:
+      summary: join wallet
+      tags:
+      - Wallet
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - invite_code
+          - multisig_info
+          properties:
+            invite_code:
+              type: string
+            multisig_info:
+              type: string
+              description: view secret key + public spend key + signature
+      responses:
+        '204':
+          description: Joined successfully
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+  "/api/v1/info/wallet":
+    get:
+      summary: Wallet Info
+      description: Get wallet status
+      tags:
+      - Info
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - status
+            - participants
+            - joined
+            - changed_keys
+            type: object
+            properties:
+              status:
+                type: string
+              participants:
+                type: integer
+              joined:
+                type: integer
+              changed_keys:
+                type: integer
+  "/api/v1/info/multisig":
+    get:
+      summary: Multisig Info
+      tags:
+      - Info
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - multisig_infos
+            type: object
+            properties:
+              multisig_infos:
+                type: array
+                items:
+                  required:
+                  - multisig_info
+                  type: object
+                  properties:
+                    multisig_info:
+                      type: string
+  "/api/v1/info/extra_multisig":
+    get:
+      summary: Push Extra Multisig Info
+      description: Pushes via websocket
+      tags:
+      - Info
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - extra_multisig_infos
+            type: object
+            properties:
+              extra_multisig_infos:
+                type: array
+                items:
+                  required:
+                  - extra_multisig_info
+                  type: object
+                  properties:
+                    extra_multisig_info:
+                      type: string
+  "/api/v1/tx_proposals":
+    post:
+      summary: create transaction proposal
+      tags:
+      - Tx Proposal
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - amount
+          - destination_address
+          - fee
+          - proposal_id
+          - signed_transaction
+          properties:
+            destination_address:
+              type: string
+              description: valid monero address
+            description:
+              type: string
+              description: human readable descritption
+            signed_transaction:
+              type: string
+              description: serialized transaction signed by initiator
+            amount:
+              type: integer
+              description: transaction amount in atomic monero units
+            fee:
+              type: integer
+              description: transaction fee in atomic monero units
+      responses:
+        '200':
+          description: Proposal created
+          schema:
+            type: object
+            properties:
+              proposal_id:
+                type: string
+                description: id of created proposal
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+    get:
+      summary: get current proposals
+      tags:
+      - Tx Proposal
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: signing
+        in: query
+        required: false
+        type: boolean
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            type: array
+            items:
+              required:
+              - amount
+              - approvals
+              - destination_address
+              - fee
+              - proposal_id
+              - rejects
+              - status
+              type: object
+              properties:
+                proposal_id:
+                  type: integer
+                destination_address:
+                  type: string
+                  description: valid monero address
+                amount:
+                  type: integer
+                  description: transaction amount in atomic monero units
+                fee:
+                  type: integer
+                  description: transaction fee in atomic monero units
+                approvals:
+                  type: array
+                  items:
+                    type: string
+                rejects:
+                  type: array
+                  items:
+                    type: string
+                description:
+                  type: string
+                  example: donation to poor c++ developer
+                status:
+                  type: string
+                  enum:
+                  - signing
+                  - success
+                  - failed
+                  - rejected
+        '403':
+          description: Status 403
+  "/api/v1/tx_proposals/{proposal_id}":
+    get:
+      summary: get transaction proposal
+      tags:
+      - Tx Proposal
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: proposal_id
+        in: path
+        required: true
+        type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - amount
+            - approvals
+            - destination_address
+            - fee
+            - proposal_id
+            - rejects
+            - status
+            type: object
+            properties:
+              proposal_id:
+                type: integer
+              destination_address:
+                type: string
+                description: valid monero address
+              amount:
+                type: integer
+                description: transaction amount in atomic monero units
+              fee:
+                type: integer
+                description: transaction fee in atomic monero units
+              approvals:
+                type: array
+                items:
+                  type: string
+              rejects:
+                type: array
+                items:
+                  type: string
+              description:
+                type: string
+                example: donation to poor c++ developer
+              status:
+                type: string
+                enum:
+                - signing
+                - success
+                - failed
+                - rejected
+        '403':
+          description: Status 403
+        '404':
+          description: Status 404
+  "/api/v1/tx_proposals/{proposal_id}/decision":
+    head:
+      summary: check proposal decision lock
+      tags:
+      - Tx Proposal
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: proposal_id
+        in: path
+        required: true
+        type: string
+      responses:
+        '200':
+          schema:
+            required:
+            - status
+            type: object
+            properties:
+              status:
+                type: string
+                enum:
+                - ok
+        '409':
+          description: Status 409, Lock can't be acquired
+        '404':
+          description: Status 404
+    put:
+      summary: sign of dismiss transaction
+      tags:
+      - Tx Proposal
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: proposal_id
+        in: path
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - approved
+          properties:
+            signed_transaction:
+              type: string
+              description: serialized transaction and signed transaction
+            approved:
+              type: boolean
+            approval_nonce:
+              type: integer
+              description: amount of approvals for proposal to check if signing actual transaction
+      responses:
+        '204':
+          description: Decision accepted
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+        '404':
+          description: Status 404
+  "/api/v1/tx_relay_status/{proposal_id}":
+    post:
+      summary: set proposal transaction id after it was relayed
+      tags:
+      - Tx Proposal
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: proposal_id
+        in: path
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - tx_id
+          properties:
+            tx_id:
+              type: array
+              items:
+                type: string
+              description: relayed transaction id (list)
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - amount
+            - approvals
+            - destination_address
+            - fee
+            - proposal_id
+            - rejects
+            - status
+            type: object
+            properties:
+              proposal_id:
+                type: integer
+              destination_address:
+                type: string
+                description: valid monero address
+              amount:
+                type: integer
+                description: transaction amount in atomic monero units
+              fee:
+                type: integer
+                description: transaction fee in atomic monero units
+              approvals:
+                type: array
+                items:
+                  type: string
+              rejects:
+                type: array
+                items:
+                  type: string
+              description:
+                type: string
+                example: donation to poor c++ developer
+              status:
+                type: string
+                enum:
+                - signing
+                - success
+                - failed
+                - rejected
+        '403':
+          description: Status 403
+        '404':
+          description: Status 404
+
+  "/api/v2/open_session":
+    post:
+      summary: OpenSession
+      tags:
+      - V2
+        - Session
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - public_key
+          properties:
+            public_key:
+              type: string
+            user_agent:
+              type: string
+          description: request to open new session
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - session_id
+            type: object
+            properties:
+              session_id:
+                type: string
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+                example: corrupted key
+
+  "/api/v2/create_wallet":
+    post:
+      summary: create wallet
+      tags:
+      - V2
+        - Wallet
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: X-Session-Id
+        in: header
+        required: true
+        type: string
+      - name: X-Nonce
+        in: header
+        required: true
+        type: integer
+        minimum: 0
+      - name: X-Signature
+        in: header
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - participants
+          - signers
+          - supported_protocols
+          properties:
+            participants:
+              type: integer
+              minimum: 2
+            signers:
+              type: integer
+              minimum: 1
+            supported_protocols:
+              type: array
+              items:
+                type: string
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            type: object
+            properties:
+              invite_code:
+                type: string
+                description: invite code to pass to other participants
+        '400':
+          description: Status 400
+          schema:
+            required:
+            - error
+            type: object
+            properties:
+              error:
+                type: string
+        '403':
+          description: Status 403
+
+  "/api/v1/stream/extra_multisig_info":
+    get:
+      summary: Push Extra Multisig Info
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - extra_multisig_infos
+            type: object
+            properties:
+              extra_multisig_infos:
+                type: array
+                items:
+                  required:
+                  - extra_multisig_info
+                  type: object
+                  properties:
+                    extra_multisig_info:
+                      type: string
+  "/api/v1/stream/outputs_request":
+    get:
+      summary: Request for outputs synchronization
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+  "/api/v1/stream/outputs":
+    get:
+      summary: Participants' outputs
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - outputs
+            type: object
+            properties:
+              outputs:
+                type: array
+                items:
+                  type: string
+  "/api/v1/stream/tx_proposal_status":
+    get:
+      summary: Transaction proposal status
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - approvals
+            - proposal_id
+            - rejects
+            type: object
+            properties:
+              proposal_id:
+                type: string
+              approvals:
+                type: array
+                description: signers keys of approved participants
+                items:
+                  type: string
+              rejects:
+                type: array
+                description: signers keys of rejected participants
+                items:
+                  type: string
+  "/api/v1/stream/tx_relay_status":
+    get:
+      summary: Transaction relay status
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - proposal_id
+            - sent
+            type: object
+            properties:
+              proposal_id:
+                type: string
+              sent:
+                type: boolean
+              transaction_hash:
+                type: string
+                description: transaction hash as it appears in blockchain
+  "/api/v1/stream/wallet_info":
+    get:
+      summary: Push Wallet Info
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - status
+            - participants
+            - joined
+            - changed_keys
+            type: object
+            properties:
+              status:
+                type: string
+              participants:
+                type: integer
+              joined:
+                type: integer
+              changed_keys:
+                type: integer
+  "/api/v1/stream/multisig_info":
+    get:
+      summary: Push Multisig Info
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - multisig_infos
+            type: object
+            properties:
+              multisig_infos:
+                type: array
+                items:
+                  required:
+                  - multisig_info
+                  type: object
+                  properties:
+                    multisig_info:
+                      type: string
+  "/api/v1/stream/new_tx_proposal":
+    get:
+      summary: New proposal notification
+      description: Pushes via websocket
+      tags:
+      - Streaming
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Status 200
+          schema:
+            required:
+            - amount
+            - destination_address
+            - fee
+            - proposal_id
+            type: object
+            properties:
+              proposal_id:
+                type: string
+              destination_address:
+                type: string
+                description: valid monero address
+              description:
+                type: string
+              amount:
+                type: integer
+                description: transaction amount in atomic monero units
+              fee:
+                type: number

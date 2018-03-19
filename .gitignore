@@ -1,0 +1,15 @@
+.env
+.venv
+.idea
+service/settings_local.py
+local_settings.py
+tmp_*
+*.pyc
+*~*
+bin
+local
+share
+include
+lib
+pip-selfcheck.json
+package/*.deb
