@@ -39,6 +39,6 @@ ujson==1.35
 Unidecode==1.0.22
 urllib3==1.22
 watchgod==0.0.3
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 WTForms==2.1
 yarl==1.1.1
