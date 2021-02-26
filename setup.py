@@ -35,7 +35,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'aiohttp==3.0.9',
+        'aiohttp==3.7.4',
         'aiohttp-swagger==1.0.5',
         'aioredis==1.1.0',
         'async-timeout==2.0.1',
