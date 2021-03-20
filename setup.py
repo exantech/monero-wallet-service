@@ -45,7 +45,7 @@ setup(
         'hiredis==0.2.0',
         'idna==2.6',
         'idna-ssl==1.0.1',
-        'Jinja2==2.10',
+        'Jinja2==2.11.3',
         'MarkupSafe==1.0',
         'multidict==4.1.0',
         'PyYAML==3.12',
