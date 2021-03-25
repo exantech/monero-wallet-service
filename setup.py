@@ -48,7 +48,7 @@ setup(
         'Jinja2==2.10',
         'MarkupSafe==1.0',
         'multidict==4.1.0',
-        'PyYAML==3.12',
+        'PyYAML==5.4',
         'yarl==1.1.1',
         'peewee==2.10.2',
         'peewee-async==0.5.12',

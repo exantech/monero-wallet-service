@@ -31,7 +31,7 @@ peewee-db-evolve==0.6.8
 psycopg2==2.7.4
 psycopg2-binary==2.7.4
 python-slugify==1.2.5
-PyYAML==3.12
+PyYAML==5.4
 redis==2.10.6
 requests==2.18.4
 six==1.11.0
