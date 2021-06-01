@@ -57,7 +57,7 @@ setup(
         'psycopg2-binary==2.7.4',
         'aiopg==0.13.2',
         'python-slugify==1.2.5',
-        'urllib3==1.22',
+        'urllib3==1.26.5',
         'ujson==1.35',
         'Flask==0.12.2',
         'flask-peewee==3.0.0',
