@@ -35,7 +35,7 @@ PyYAML==3.12
 redis==2.10.6
 requests==2.18.4
 six==1.11.0
-ujson==1.35
+ujson==5.2.0
 Unidecode==1.0.22
 urllib3==1.22
 watchgod==0.0.3
