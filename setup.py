@@ -58,7 +58,7 @@ setup(
         'aiopg==0.13.2',
         'python-slugify==1.2.5',
         'urllib3==1.22',
-        'ujson==1.35',
+        'ujson==5.4.0',
         'Flask==0.12.2',
         'flask-peewee==3.0.0',
         'flask-swagger-ui==3.6.0',
